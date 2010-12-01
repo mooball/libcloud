@@ -114,7 +114,6 @@ class LinodeResponse(Response):
 
         @return: C{list} of objects and C{list} of errors"""
 
-        print "GOT RESPONSE: %s" % self.body
         try:
             js = json.loads(self.body)
         except:
@@ -420,10 +419,6 @@ class LinodeNodeDriver(NodeDriver):
         }
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         linode = { "id": data["LinodeID"] }
-
-        print "#"*80
-        print "LinodeID: %s" % data["LinodeID"]
-        print "#"*80
 
         # Step 1b. linode.update to rename the Linode
         params = {
