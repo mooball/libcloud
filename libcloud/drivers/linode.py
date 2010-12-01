@@ -113,6 +113,8 @@ class LinodeResponse(Response):
         None and errorarray will indicate an invalid JSON exception.
 
         @return: C{list} of objects and C{list} of errors"""
+
+        print "GOT RESPONSE: %s" % self.body
         try:
             js = json.loads(self.body)
         except:
@@ -419,6 +421,10 @@ class LinodeNodeDriver(NodeDriver):
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         linode = { "id": data["LinodeID"] }
 
+        print "#"*80
+        print "LinodeID: %s" % data["LinodeID"]
+        print "#"*80
+
         # Step 1b. linode.update to rename the Linode
         params = {
             "api_action": "linode.update",
@@ -486,6 +492,53 @@ class LinodeNodeDriver(NodeDriver):
         params = { "api_action": "linode.list", "LinodeID": linode["id"] }
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         return self._to_nodes(data)
+
+    def start_node(self, node):
+        """
+        Starts a node which is currently shot down
+
+        @keyword node: the Node to booted
+        @type node: Node
+
+        Underlying API:
+        linode.boot()
+
+        Issues a boot job for the provided ConfigID. If no
+        ConfigID is provided boots the last used configuration
+        profile, or the first configuration profile if this Linode
+        has never been booted.
+        """
+        params = {
+            "api_action":       "linode.boot",
+            "LinodeID":         node.id,
+            #"ConfigID":         linode["config"]
+        }
+        unused = self.connection.request(LINODE_ROOT, params=params)
+        return
+
+
+    def stop_node(self, node):
+        """
+        Shuts down a node which is currently running
+
+        @keyword node: the Node to be shut down
+        @type node: Node
+
+        Underlying API:
+        linode.shutdown()
+
+        Issues a shutdown job for a given LinodeID.
+
+        """
+        params = {
+            "api_action":       "linode.shutdown",
+            "LinodeID":         node.id,
+            #"ConfigID":         linode["config"]
+        }
+        unused = self.connection.request(LINODE_ROOT, params=params)
+
+        return
+
 
     def list_sizes(self, location=None):
         """List available Linode plans
