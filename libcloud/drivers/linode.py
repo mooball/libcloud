@@ -201,11 +201,21 @@ class LinodeNodeDriver(NodeDriver):
     connectionCls = LinodeConnection
     _linode_plan_ids = LINODE_PLAN_IDS
 
-    def __init__(self, key):
+    def __init__(self, key, secret=None, secure=True, host=None, port=None):
         """Instantiate the driver with the given API key
 
         @keyword key: the API key to use
-        @type key: C{str}"""
+        @type key: C{str}
+
+        @keyword secret: Not used, kept for compatibility with the base class
+
+        @keyword secure: Not used, kept for compatibility with the base class
+
+        @keyword host: Not used, kept for compatibility with the base class
+
+        @keyword port: Not used, kept for compatibility with the base class
+
+        """
         self.datacenter = None
         NodeDriver.__init__(self, key)
 
