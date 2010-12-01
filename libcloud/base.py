@@ -631,7 +631,7 @@ class NodeDriver(object):
         or returning a generated password.
 
         This function may raise a L{DeplyomentException}, if a create_node
-        call was successful, but there is a later error (like SSH failing or 
+        call was successful, but there is a later error (like SSH failing or
         timing out).  This exception includes a Node object which you may want
         to destroy if incomplete deployments are not desirable.
 
@@ -697,6 +697,24 @@ class NodeDriver(object):
         except Exception, e:
           raise DeploymentError(node, e)
         return n
+
+    def start_node(self, node):
+        """Boots a node.
+
+        @return: C{bool} True if the start was successful, otherwise False
+        """
+        raise NotImplementedError, \
+            'start_node not implemented for this driver'
+
+    def stop_node(self, node):
+        """Shuts down a running node.
+
+        @return: C{bool} True if the shutdown was successful, otherwise False
+        """
+        raise NotImplementedError, \
+            'stop_node not implemented for this driver'
+
+
 
 def is_private_subnet(ip):
     """
