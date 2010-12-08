@@ -488,6 +488,16 @@ class LinodeNodeDriver(NodeDriver):
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         return self._to_nodes(data)
 
+
+    def node_status(self, node):
+        """
+        Returns the node data without changing its status
+        """
+        params = { "api_action": "linode.list", "LinodeID": node.id }
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+        return self._to_nodes(data)[0]
+
+
     def start_node(self, node):
         """
         Starts a node which is currently shot down
@@ -627,9 +637,14 @@ class LinodeNodeDriver(NodeDriver):
         batch = []
         for o in objs:
             lid = o["LINODEID"]
-            nodes[lid] = n = Node(id=lid, name=o["LABEL"], public_ip=[],
-                private_ip=[], state=self.LINODE_STATES[o["STATUS"]],
-                driver=self.connection.driver)
+            nodes[lid] = n = Node(
+                id=lid,
+                name=o["LABEL"],
+                public_ip=[],
+                private_ip=[],
+                state=self.LINODE_STATES[o["STATUS"]],
+                driver=self.connection.driver
+                )
             n.extra = copy(o)
             n.extra["PLANID"] = self._linode_plan_ids.get(o.get("TOTALRAM"))
             batch.append({"api_action": "linode.ip.list", "LinodeID": lid})
