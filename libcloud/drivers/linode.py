@@ -27,7 +27,7 @@ Linode(R) is a registered trademark of Linode, LLC.
 
 Maintainer: Jed Smith <jed@linode.com>"""
 
-from libcloud.types import Provider, NodeState, InvalidCredsError, MalformedResponseError
+from libcloud.types import Provider, NodeState, InvalidCredsError, MalformedResponseError, LibcloudError
 from libcloud.base import ConnectionKey, Response
 from libcloud.base import NodeDriver, NodeSize, Node, NodeLocation
 from libcloud.base import NodeAuthPassword, NodeAuthSSHKey
@@ -36,6 +36,7 @@ from copy import copy
 import json
 import itertools
 import os
+import time
 
 # Where requests go - in beta situations, this information may change.
 LINODE_API = "api.linode.com"
@@ -498,12 +499,14 @@ class LinodeNodeDriver(NodeDriver):
         return self._to_nodes(data)[0]
 
 
-    def start_node(self, node):
+    def start_node(self, node, wait=False):
         """
         Starts a node which is currently shot down
 
         @keyword node: the Node to booted
         @type node: Node
+        @keyword wait: wait for the node to boot fully before returning
+        @type wait: boolean
 
         Underlying API:
         linode.boot()
@@ -516,18 +519,35 @@ class LinodeNodeDriver(NodeDriver):
         params = {
             "api_action":       "linode.boot",
             "LinodeID":         node.id,
-            #"ConfigID":         linode["config"]
         }
-        unused = self.connection.request(LINODE_ROOT, params=params)
-        return
+        status = self.connection.request(LINODE_ROOT, params=params)
 
 
-    def stop_node(self, node):
+        if wait:
+            # Wait until the node fully shuts down
+
+            status = self.node_status(node)
+            for i in range(1,5):
+                if status.state == NodeState.RUNNING:
+                    break
+                print "NOT RUNNING, SLEEPING %s sec" % (10*i)
+                time.sleep(10*i)
+                status = self.node_status(node)
+
+            if status.state != NodeState.RUNNING:
+                raise LibcloudError("Failed to boot %s" % self)
+
+        return status
+
+
+    def stop_node(self, node, wait=False):
         """
         Shuts down a node which is currently running
 
         @keyword node: the Node to be shut down
         @type node: Node
+        @keyword wait: wait for the node to shut down fully before returning
+        @type wait: boolean
 
         Underlying API:
         linode.shutdown()
@@ -538,11 +558,23 @@ class LinodeNodeDriver(NodeDriver):
         params = {
             "api_action":       "linode.shutdown",
             "LinodeID":         node.id,
-            #"ConfigID":         linode["config"]
         }
-        unused = self.connection.request(LINODE_ROOT, params=params)
+        status = self.connection.request(LINODE_ROOT, params=params)
 
-        return
+        if wait:
+            # Wait until the node fully shuts down
+            status = self.node_status(node)
+            for i in range(1,5):
+                if status.state == NodeState.TERMINATED:
+                    break
+                print "NOT RUNNING, SLEEPING %s sec" % (10*i)
+                time.sleep(10*i)
+                status = self.node_status(node)
+
+            if status.state != NodeState.TERMINATED:
+                raise LibcloudError("Failed to boot %s" % self)
+
+        return status
 
 
     def list_sizes(self, location=None):
