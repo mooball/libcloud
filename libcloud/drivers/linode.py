@@ -254,7 +254,9 @@ class LinodeNodeDriver(NodeDriver):
         @type node: L{Node}"""
         params = { "api_action": "linode.reboot", "LinodeID": node.id }
         self.connection.request(LINODE_ROOT, params=params)
-        return True
+
+        status = self.node_status(node)
+        return status
 
     def destroy_node(self, node):
         """Destroy the given Linode
