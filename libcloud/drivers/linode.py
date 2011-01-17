@@ -638,6 +638,72 @@ class LinodeNodeDriver(NodeDriver):
                                    self))
         return nl
 
+    def list_domains(self, domain_id=None):
+        """
+        List available domains
+        
+        if domain_id passed, limits the results to the particular domain
+        
+        @return: a C{list} of L{dicts}s containing the following keys:
+        
+         "DOMAINID":5093,
+         "DESCRIPTION":"",
+         "TYPE":"master",
+         "STATUS":1,
+         "SOA_EMAIL":"dns@example.com",
+         "DOMAIN":"linode.com",
+         "RETRY_SEC":0,
+         "MASTER_IPS":"",
+         "EXPIRE_SEC":0,
+         "REFRESH_SEC":0,
+         "TTL_SEC":0
+         
+         
+        NOTE: This is not a part of Libcloud API
+
+        """
+        params = { "api_action": "domain.list" }
+        
+        if domain_id is not None:
+            params['DomainID'] = domain_id
+            
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+        
+        print "GOT DOMAINS: %s" % (data,)
+        return data
+
+    def list_domain_resources(self, domain_id=None, resource_id=None):
+        """
+        List available domain resources
+        
+        if domain_id or resource_id passed, limits the results to the particular domain/resource
+        
+        @return: a C{list} of L{dicts}s containing the following keys:
+        
+         "PROTOCOL":"",
+         "TTL_SEC":0,
+         "PRIORITY":0,
+         "TYPE":"A",
+         "TARGET":"75.127.96.245",
+         "WEIGHT":0,
+         "RESOURCEID":28536,
+         "PORT":0,
+         "DOMAINID":5093,
+         "NAME":"www"
+         
+         
+        NOTE: This is not a part of Libcloud API
+
+        """
+        params = { "api_action": "domain.resource.list" }
+        
+        if domain_id is not None:
+            params['DomainID'] = domain_id
+            
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+        return data
+
+
     def linode_set_datacenter(self, dc):
         """Set the default datacenter for Linode creation
 
