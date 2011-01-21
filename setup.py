@@ -20,6 +20,9 @@ from unittest import TextTestRunner, TestLoader
 from glob import glob
 from os.path import splitext, basename, join as pjoin
 
+
+VERSION = '0.4.3'
+
 HTML_VIEWSOURCE_BASE = 'https://svn.apache.org/viewvc/incubator/libcloud/trunk'
 PROJECT_BASE_DIR = 'http://incubator.apache.org/libcloud/'
 
@@ -77,7 +80,7 @@ class ApiDocsCommand(Command):
 
 setup(
     name='apache-libcloud',
-    version='0.4.2',
+    version=VERSION,
     description='A unified interface into many cloud server providers',
     author='Apache Software Foundation',
     author_email='libcloud@incubator.apache.org',
