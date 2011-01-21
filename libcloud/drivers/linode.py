@@ -638,14 +638,20 @@ class LinodeNodeDriver(NodeDriver):
                                    self))
         return nl
 
+
+    #
+    #  DOMAIN STUFF
+    #
+
+
     def list_domains(self, domain_id=None):
         """
         List available domains
-        
+
         if domain_id passed, limits the results to the particular domain
-        
+
         @return: a C{list} of L{dicts}s containing the following keys:
-        
+
          "DOMAINID":5093,
          "DESCRIPTION":"",
          "TYPE":"master",
@@ -657,29 +663,105 @@ class LinodeNodeDriver(NodeDriver):
          "EXPIRE_SEC":0,
          "REFRESH_SEC":0,
          "TTL_SEC":0
-         
-         
+
+
         NOTE: This is not a part of Libcloud API
 
         """
         params = { "api_action": "domain.list" }
-        
+
         if domain_id is not None:
             params['DomainID'] = domain_id
-            
+
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
-        
+
         print "GOT DOMAINS: %s" % (data,)
         return data
+
+    def create_domain(self, domain, domain_type,
+            description='', soa_email='', refresh_sec='0',
+            retry_sec='0', expire_sec='0',ttl_sec='0',
+            status='1', master_ips=''):
+        """
+        Creates a domain using domain.create Linode API
+        See http://www.linode.com/api/?method=domain.create
+        NOTE: This is not a part of Libcloud API
+        """
+        params = {
+            "api_action": "domain.create",
+            "Domain": domain,
+            "Description": description,
+            "Type": domain_type,
+            "SOA_Email": soa_email,
+            "Refresh_sec": refresh_sec,
+            "Retry_sec": retry_sec,
+            "Expire_sec": expire_sec,
+            "TTL_sec": ttl_sec,
+            "status": status,
+            "master_ips": master_ips,
+        }
+
+        if domain_id is not None:
+            params['DomainID'] = domain_id
+
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+        return data
+
+    def delete_domain(self, domain_id):
+        """
+        Delete a domain
+
+        if domain_id passed, limits the results to the particular domain
+        # See http://www.linode.com/api/?method=domain.delete
+        NOTE: This is not a part of Libcloud API
+
+        """
+        params = {
+            "api_action": "domain.delete",
+            "DomainID": domain_id,
+        }
+
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+
+        return data
+
+
+    def update_domain(self, domain_id, domain=None, domain_type=None,
+            description=None, soa_email=None, refresh_sec=None,
+            retry_sec=None, expire_sec=None,ttl_sec=None,
+            status=None, master_ips=None):
+        """
+        Updates a domain record using domain.update Linode API
+        See http://www.linode.com/api/?method=domain.update
+        NOTE: This is not a part of Libcloud API
+        """
+        params = dict([ pair for pair in (
+            ("api_action", "domain.update"),
+            ("DomainID", domain_id),
+            ("Domain", domain),
+            ("Description", description),
+            ("Type", domain_type),
+            ("SOA_Email", soa_email),
+            ("Refresh_sec", refresh_sec),
+            ("Retry_sec", retry_sec),
+            ("Expire_sec", expire_sec),
+            ("TTL_sec", ttl_sec),
+            ("status", status),
+            ("master_ips", master_ips),
+            ) if pair[1] is not None ])
+
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+        return data
+
 
     def list_domain_resources(self, domain_id=None, resource_id=None):
         """
         List available domain resources
-        
+
         if domain_id or resource_id passed, limits the results to the particular domain/resource
-        
+
         @return: a C{list} of L{dicts}s containing the following keys:
-        
+
          "PROTOCOL":"",
          "TTL_SEC":0,
          "PRIORITY":0,
@@ -690,16 +772,85 @@ class LinodeNodeDriver(NodeDriver):
          "PORT":0,
          "DOMAINID":5093,
          "NAME":"www"
-         
-         
+
+
         NOTE: This is not a part of Libcloud API
 
         """
         params = { "api_action": "domain.resource.list" }
-        
+
         if domain_id is not None:
             params['DomainID'] = domain_id
-            
+
+        if domain_id is not None:
+            params['ResourceID'] = resource_id
+
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+        return data
+
+    def create_domain_resource(self, domain_id, resource_type,
+            name='', target='', priority='10',
+            weight='5', port='80', protocol='udp', ttl_sec='0'):
+        """
+        Creates a domain resource using domain.resource.create Linode API
+        See http://www.linode.com/api/?method=domain.resource.create
+        NOTE: This is not a part of Libcloud API
+        """
+        params = {
+            "api_action": "domain.resource.create",
+            "DomainID": domain_id,
+            "Type": resource_type,
+            "Name": name,
+            "Target": target,
+            "Priority": priority,
+            "Weight": weight,
+            "Port": port,
+            "Protocol": protocol,
+            "TTL_sec": ttl_sec,
+        }
+
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+        return data
+
+    def delete_domain_resource(self, domain_id, resource_id):
+        """
+        Delete a domain resource
+        # See http://www.linode.com/api/?method=domain.resource.delete
+        NOTE: This is not a part of Libcloud API
+
+        """
+        params = {
+            "api_action": "domain.resource.delete",
+            "DomainID": domain_id,
+            "ResourceID": resource_id,
+        }
+
+        data = self.connection.request(LINODE_ROOT, params=params).objects[0]
+
+        return data
+
+
+    def update_domain_resource(self, domain_id, resource_id,
+        name=None, target=None, priority = None, weight=None,
+        port=None, protocol=None, ttl_sec=None):
+        """
+        Updates a domain resource using domain.resource.update Linode API
+        See http://www.linode.com/api/?method=domain.resource.update
+        NOTE: This is not a part of Libcloud API
+        """
+        params = dict([ pair for pair in (
+            ("api_action", "domain.resource.update"),
+            ("DomainID", domain_id),
+            ("ResourceID", domain_id),
+            ("Name", name),
+            ("Target", target),
+            ("Priority", priority),
+            ("Weight", weight),
+            ("Port", port),
+            ("Protocol", protocol),
+            ("TTL_sec", ttl_sec),
+            ) if pair[1] is not None ])
+
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         return data
 
