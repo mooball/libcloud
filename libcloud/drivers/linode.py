@@ -782,7 +782,7 @@ class LinodeNodeDriver(NodeDriver):
         if domain_id is not None:
             params['DomainID'] = domain_id
 
-        if domain_id is not None:
+        if resource_id is not None:
             params['ResourceID'] = resource_id
 
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
