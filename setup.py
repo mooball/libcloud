@@ -21,7 +21,7 @@ from glob import glob
 from os.path import splitext, basename, join as pjoin
 
 
-VERSION = '0.4.4'
+VERSION = '0.4.5'
 
 HTML_VIEWSOURCE_BASE = 'https://svn.apache.org/viewvc/incubator/libcloud/trunk'
 PROJECT_BASE_DIR = 'http://incubator.apache.org/libcloud/'

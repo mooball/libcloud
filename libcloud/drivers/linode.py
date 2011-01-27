@@ -678,7 +678,7 @@ class LinodeNodeDriver(NodeDriver):
         print "GOT DOMAINS: %s" % (data,)
         return data
 
-    def create_domain(self, domain, domain_type,
+    def create_domain(self, domain, domain_type='master',
             description='', soa_email='', refresh_sec='0',
             retry_sec='0', expire_sec='0',ttl_sec='0',
             status='1', master_ips=''):
@@ -700,9 +700,6 @@ class LinodeNodeDriver(NodeDriver):
             "status": status,
             "master_ips": master_ips,
         }
-
-        if domain_id is not None:
-            params['DomainID'] = domain_id
 
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         return data
