@@ -244,7 +244,7 @@ class LinodeNodeDriver(NodeDriver):
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         return self._to_nodes(data)
 
-    def reboot_node(self, node):
+    def reboot_node(self, node=None, node_id=None):
         """Reboot the given Linode
 
         Will issue a shutdown job followed by a boot job, using the last booted
@@ -252,13 +252,17 @@ class LinodeNodeDriver(NodeDriver):
 
         @keyword node: the Linode to reboot
         @type node: L{Node}"""
-        params = { "api_action": "linode.reboot", "LinodeID": node.id }
+
+        # Linode expects a number. If it's not a number we let it fail
+        node_id = int(node_id or node.id)
+
+        params = { "api_action": "linode.reboot", "LinodeID": node_id }
         self.connection.request(LINODE_ROOT, params=params)
 
-        status = self.node_status(node)
+        status = self.node_status(node_id=node_id)
         return status
 
-    def destroy_node(self, node):
+    def destroy_node(self, node=None, node_id=None):
         """Destroy the given Linode
 
         Will remove the Linode from the account and issue a prorated credit. A
@@ -271,7 +275,11 @@ class LinodeNodeDriver(NodeDriver):
 
         @keyword node: the Linode to destroy
         @type node: L{Node}"""
-        params = { "api_action": "linode.delete", "LinodeID": node.id,
+
+        # Linode expects a number. If it's not a number we let it fail
+        node_id = int(node_id or node.id)
+
+        params = { "api_action": "linode.delete", "LinodeID": node_id,
             "skipChecks": True }
         self.connection.request(LINODE_ROOT, params=params)
         return True
@@ -492,21 +500,37 @@ class LinodeNodeDriver(NodeDriver):
         return self._to_nodes(data)
 
 
-    def node_status(self, node):
+    def node_status(self, node=None, node_id=None):
         """
         Returns the node data without changing its status
+
+        Accepts either a Node object or just a node_id, because it
+        often is bloody annoying to build a full node even if what we need is
+        an uid
         """
-        params = { "api_action": "linode.list", "LinodeID": node.id }
+
+        # Linode expects a number. If it's not a number we let it fail
+        node_id = int(node_id or node.id)
+        
+        params = { "api_action": "linode.list", "LinodeID": node_id }
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         return self._to_nodes(data)[0]
 
 
-    def start_node(self, node, wait=False):
+    def start_node(self, node=None, node_id=None, wait=False):
         """
         Starts a node which is currently shot down
 
-        @keyword node: the Node to booted
-        @type node: Node
+        Accepts either a Node object or just a node_id, because it
+        often is bloody annoying to build a full node even if what we need is
+        an uid
+
+        @keyword node: the Node to booted. Can be None - node_id will then be used instead
+        @type node: Node.
+        
+        @keyword node_id: the id of the node Node to be booted. Can be None, but then we need to provide the 'node' parameter
+        @type node: int.
+        
         @keyword wait: wait for the node to boot fully before returning
         @type wait: boolean
 
@@ -518,9 +542,13 @@ class LinodeNodeDriver(NodeDriver):
         profile, or the first configuration profile if this Linode
         has never been booted.
         """
+
+        # Linode expects a number. If it's not a number we let it fail
+        node_id = int(node_id or node.id)
+        
         params = {
             "api_action":       "linode.boot",
-            "LinodeID":         node.id,
+            "LinodeID":         node_id,
         }
         status = self.connection.request(LINODE_ROOT, params=params)
 
@@ -528,13 +556,13 @@ class LinodeNodeDriver(NodeDriver):
         if wait:
             # Wait until the node fully shuts down
 
-            status = self.node_status(node)
+            status = self.node_status(node_id=node_id)
             for i in range(1,5):
                 if status.state == NodeState.RUNNING:
                     break
                 print "NOT RUNNING, SLEEPING %s sec" % (10*i)
                 time.sleep(10*i)
-                status = self.node_status(node)
+                status = self.node_status(node_id=node_id)
 
             if status.state != NodeState.RUNNING:
                 raise LibcloudError("Failed to boot %s" % self)
@@ -542,7 +570,7 @@ class LinodeNodeDriver(NodeDriver):
         return status
 
 
-    def stop_node(self, node, wait=False):
+    def stop_node(self, node=None, node_id=None, wait=False):
         """
         Shuts down a node which is currently running
 
@@ -557,6 +585,11 @@ class LinodeNodeDriver(NodeDriver):
         Issues a shutdown job for a given LinodeID.
 
         """
+
+
+        # Linode expects a number. If it's not a number we let it fail
+        node_id = int(node_id or node.id)
+
         params = {
             "api_action":       "linode.shutdown",
             "LinodeID":         node.id,
@@ -565,13 +598,13 @@ class LinodeNodeDriver(NodeDriver):
 
         if wait:
             # Wait until the node fully shuts down
-            status = self.node_status(node)
+            status = self.node_status(node_id=node_id)
             for i in range(1,5):
                 if status.state == NodeState.TERMINATED:
                     break
                 print "NOT RUNNING, SLEEPING %s sec" % (10*i)
                 time.sleep(10*i)
-                status = self.node_status(node)
+                status = self.node_status(node_id=node_id)
 
             if status.state != NodeState.TERMINATED:
                 raise LibcloudError("Failed to boot %s" % self)
