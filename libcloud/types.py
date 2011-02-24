@@ -61,6 +61,7 @@ class Provider(object):
     ELASTICHOSTS_UK2 = 20
     ELASTICHOSTS_US1 = 21
     EC2_AP_SOUTHEAST = 22
+    XEN = 999
 
 class NodeState(object):
     """
