@@ -50,20 +50,20 @@ class XenNodeDriver(NodeDriver):
         @keyword key: the API key to use
         @type key: C{str}
 
-        @keyword secret: 
+        @keyword secret:
 
-        @keyword secure: 
+        @keyword secure:
 
-        @keyword host: 
+        @keyword host:
 
-        @keyword port: 
+        @keyword port:
 
         """
         if port is not None:
             host = "%s:%s" % (host, port)
         self.session = api.Session("http://%s/" % host)
         self.session.xenapi.login_with_password(key, secret)
-        
+
 
     # Converts Xen VM 'power_state' to a NodeState constant.
     XEN_VM_STATES = {
@@ -77,14 +77,14 @@ class XenNodeDriver(NodeDriver):
     def list_nodes(self):
         """
         List all Xen VMs that are located on the given server
-        
+
         @return: C{list} of L{Node} objects that the API key can access
         """
-        
+
         all_records = self.session.xenapi.VM.get_all_records()
 
         vms_data = {}
-        
+
         for (vm_ref, vm_info) in all_records.items():
             if vm_info['is_a_template'] or vm_info['is_a_snapshot']:
                 # Skip templates and snapshots
@@ -115,10 +115,10 @@ class XenNodeDriver(NodeDriver):
                 guest_metrics = self.session.xenapi.VM_guest_metrics.get_record(gm_ref)
                 print "GUEST METRICS:"
                 pp(guest_metrics)
-                ip = guest_metrics['networks']['0/ip']
+                ip = guest_metrics['networks'].get('0/ip', None)
                 print "IP ADDRESS: %s" % ip
                 vm_info['ext_ip_address'] = ip
-                
+
             vms_data[vm_ref] = vm_info
 
         return self._to_nodes(vms_data)
@@ -234,7 +234,7 @@ class XenNodeDriver(NodeDriver):
         """Destroy the given Xen VM
 
         TODO
-        
+
         @keyword node: the Linode to destroy
         @type node: L{Node}"""
 
@@ -270,7 +270,7 @@ class XenNodeDriver(NodeDriver):
     def list_images(self):
         """
         List available Linux distributions
-        
+
         Retrieve all Linux distributions that can be deployed.
         @return: a C{list} of L{NodeImage}s
         """
