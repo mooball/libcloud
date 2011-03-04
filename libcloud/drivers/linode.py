@@ -244,7 +244,27 @@ class LinodeNodeDriver(NodeDriver):
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         return self._to_nodes(data)
 
-    def reboot_node(self, node=None, node_id=None):
+
+    def _wait_for_status(self, node_id, target_status):
+        """
+        Sleeps for increasing intervals, periodically checking
+        if the node status reached the target_status
+        """
+        status = self.node_status(node_id=node_id)
+        for i in range(1,5):
+            if status.state == target_status:
+                break
+            sleep_for = 10*i
+            print "STATUS IS %s, WAITNG FOR %s, SLEEPING %s sec" % (status.state, target_status, sleep_for)
+            time.sleep(sleep_for)
+            status = self.node_status(node_id=node_id)
+
+        if status.state != target_status:
+            raise LibcloudError("Failed to reach the target status %s for %s" % (target_status, self))
+
+        return status
+
+    def reboot_node(self, node=None, node_id=None, wait=False):
         """Reboot the given Linode
 
         Will issue a shutdown job followed by a boot job, using the last booted
@@ -258,8 +278,14 @@ class LinodeNodeDriver(NodeDriver):
 
         params = { "api_action": "linode.reboot", "LinodeID": node_id }
         self.connection.request(LINODE_ROOT, params=params)
-
         status = self.node_status(node_id=node_id)
+
+        if wait:
+            # give it a chance to shut down before checking for status
+            # for the first time
+            time.sleep(5)
+            status = self._wait_for_status(node_id, NodeState.RUNNING)
+
         return status
 
     def destroy_node(self, node=None, node_id=None):
@@ -511,7 +537,7 @@ class LinodeNodeDriver(NodeDriver):
 
         # Linode expects a number. If it's not a number we let it fail
         node_id = int(node_id or node.id)
-        
+
         params = { "api_action": "linode.list", "LinodeID": node_id }
         data = self.connection.request(LINODE_ROOT, params=params).objects[0]
         return self._to_nodes(data)[0]
@@ -527,10 +553,10 @@ class LinodeNodeDriver(NodeDriver):
 
         @keyword node: the Node to booted. Can be None - node_id will then be used instead
         @type node: Node.
-        
+
         @keyword node_id: the id of the node Node to be booted. Can be None, but then we need to provide the 'node' parameter
         @type node: int.
-        
+
         @keyword wait: wait for the node to boot fully before returning
         @type wait: boolean
 
@@ -545,7 +571,7 @@ class LinodeNodeDriver(NodeDriver):
 
         # Linode expects a number. If it's not a number we let it fail
         node_id = int(node_id or node.id)
-        
+
         params = {
             "api_action":       "linode.boot",
             "LinodeID":         node_id,
@@ -554,18 +580,7 @@ class LinodeNodeDriver(NodeDriver):
 
 
         if wait:
-            # Wait until the node fully shuts down
-
-            status = self.node_status(node_id=node_id)
-            for i in range(1,5):
-                if status.state == NodeState.RUNNING:
-                    break
-                print "NOT RUNNING, SLEEPING %s sec" % (10*i)
-                time.sleep(10*i)
-                status = self.node_status(node_id=node_id)
-
-            if status.state != NodeState.RUNNING:
-                raise LibcloudError("Failed to boot %s" % self)
+            status = self._wait_for_status(node_id, NodeState.RUNNING)
 
         return status
 
@@ -592,22 +607,12 @@ class LinodeNodeDriver(NodeDriver):
 
         params = {
             "api_action":       "linode.shutdown",
-            "LinodeID":         node.id,
+            "LinodeID":         node_id,
         }
         status = self.connection.request(LINODE_ROOT, params=params)
 
         if wait:
-            # Wait until the node fully shuts down
-            status = self.node_status(node_id=node_id)
-            for i in range(1,5):
-                if status.state == NodeState.TERMINATED:
-                    break
-                print "NOT RUNNING, SLEEPING %s sec" % (10*i)
-                time.sleep(10*i)
-                status = self.node_status(node_id=node_id)
-
-            if status.state != NodeState.TERMINATED:
-                raise LibcloudError("Failed to boot %s" % self)
+            status = self._wait_for_status(node_id, NodeState.TERMINATED)
 
         return status
 
